@@ -1,0 +1,170 @@
+---
+title: "Pathways to Health"
+subtitle: "A look at GDP, Life Expectancy and TB Vaccine Distribution"
+author: "Naoise Carty"
+format:
+  html:
+    theme: sandstone
+    
+execute:
+  echo: false
+  warning: false
+  message: false
+editor: visual
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+# libraries
+library(tidyverse)
+library(ggplot2)
+library(plotly)
+
+#Data
+unicef_indicator2_ad <- read_csv("unicef_indicator2_ad.csv")
+unicef_metadata_ad <- read_csv("unicef_metadata_ad.csv")
+
+```
+
+This Quarto document provides a comprehensive visualisation designed to highlight key factors in human development and health worldwide between 1980 and 2020. These factors are shown through key metrics, Gross Domestic Product (GDP) per capita, Life Expectancy, and the Percentile of live births that received the Bacille Calmetta-Guerin (vaccine against TB). Understanding the relationship between economic prosperity and public health is essential for improving the quality of life across the globe.
+
+The use of the key metric, GDP, will give us an assessment of the worldwide economic performance from country to country. GDP per capita is the total value of goods and services within a country’s borders.
+
+Life expectancy is a key indicator of overall population and well-being as it highlights the number of years that a person is expected to love. The TB  vaccine is an example of healthcare services, highlighting the accessibility to healthcare throughout the globe.
+
+It is evident that economic wealth, life expectancy and access to healthcare have a complex relationship but are intrinsically linked as can be seen through these visualisations.
+
+```{r}
+#| fig-cap: "These two world maps show the life expected across the globe in two different years. By illustrating these two metrics in two different years, the improvements in both life expectancy and GDP can be observed. Although the relationship between life expectancy and GDP is not linear, GDP can be an influencing factor on a country’s life expectancy, GDP can be an influencing factor on a country’s average life expectancy as a higher GDP often correlates with access to healthcare services, education, and clean sanitation. However, the relationship between life expectancy and GDP is complex and can vary as represented in these maps."
+
+names(unicef_indicator2_ad)[names(unicef_indicator2_ad)== "time_period"] <- "year"
+data_join <- full_join(unicef_indicator2_ad, unicef_metadata_ad, by = "year")
+
+names(data_join)[names(data_join)== "country.x"] <- "region"
+names(data_join)[names(data_join)== "Life expectancy at birth, total (years)"] <- "Life_Exp"
+
+map_world <- map_data("world")
+
+
+
+names(unicef_metadata_ad)[names(unicef_metadata_ad)== "country"] <- "region"
+names(unicef_indicator2_ad)[names(unicef_indicator2_ad)== "country"] <- "region"
+
+merge_data <- merge(unicef_metadata_ad, unicef_indicator2_ad, by = "region", all = TRUE)
+
+data_join_1980 <- unicef_metadata_ad%>%
+  filter(year == 1980)
+names(data_join_1980)[names(data_join_1980)== "Life expectancy at birth, total (years)"] <- "Life_Exp"
+
+world_map <- map_data("world")
+
+#Map of life Exp 1980
+
+map_data_join <- full_join(data_join_1980, world_map, by = c("region"))
+
+ggplot(map_data_join) +
+  aes(x = long, y = lat, group = group, fill = Life_Exp) +
+  geom_polygon() +
+  scale_fill_gradient(low = "yellow", high = "orange", na.value = "grey") +
+  labs(title = "Worldwide Life Expectancy in 1980")
+
+
+```
+
+
+
+
+
+```{r}
+
+
+data_join <- full_join(unicef_indicator2_ad, unicef_metadata_ad, by = "year")
+
+names(data_join)[names(data_join)== "country.x"] <- "region"
+names(data_join)[names(data_join)== "Life expectancy at birth, total (years)"] <- "Life_Exp"
+
+map_world <- map_data("world")
+
+
+
+names(unicef_metadata_ad)[names(unicef_metadata_ad)== "country"] <- "region"
+names(unicef_indicator2_ad)[names(unicef_indicator2_ad)== "country"] <- "region"
+
+#Data Merge (Country)
+merge_data <- merge(unicef_metadata_ad, unicef_indicator2_ad, by = "region", all = TRUE)
+
+data_join_2020 <- unicef_metadata_ad%>%
+  filter(year == 2020)
+names(data_join_2020)[names(data_join_2020)== "Life expectancy at birth, total (years)"] <- "Life_Exp"
+
+world_map <- map_data("world")
+
+#Map of life Exp 2020
+
+map_data_join <- full_join(data_join_2020, world_map, by = c("region"))
+
+ggplot(map_data_join) +
+  aes(x = long, y = lat, group = group, fill = Life_Exp) +
+  geom_polygon() +
+  scale_fill_gradient(low = "yellow", high = "orange", na.value = "grey") +
+  labs(title = "Worldwide Life Expectancy in 2020")
+```
+
+
+This bar chat illustrates the percentage of live births that received the Bacille Calmetta-Guerin (vaccine against TB) worldwide from 1980 until 2020. The chart shows the increase in the percentage of births that received the vaccine due to an increase in access to healthcare worldwide.
+
+```{r}
+
+library(dplyr)
+
+names(unicef_indicator2_ad)[names(unicef_indicator2_ad)=="country"]<- "region"
+
+names(unicef_metadata_ad)[names(unicef_metadata_ad)=="country"]<- "region"
+
+names(unicef_indicator2_ad)[names(unicef_indicator2_ad)=="time_period"]<-"year"
+
+
+years <- 1980:2022
+
+names(data_join)[names(data_join)=="gdp per capita"]<- "GDP"
+
+names(data_join)[names(data_join)== "GDP per capita (constant 2015 US$)"]<- "GDP"
+
+average_GDP <- aggregate(GDP ~ year, data_join, mean)
+
+barplot(average_GDP$GDP,
+        
+        names.arg = average_GDP$year,
+        
+        col = "red",
+        
+        main = "Average Worldwide GDP per Capita (1980-2022)",
+        
+        xlab = "Timeline",
+        
+        ylab = "Average GDP per Capita (USD)")
+```
+
+This Timeseries plot illustrates the worldwide Life Expectancy from 1980 - 2020.
+
+```{r}
+
+
+names(data_join)[names(data_join) =="country"] <- "region"
+names(data_join)[names(data_join) =="Life expectancy at birth, total (years)"] <- "Life_Exp"
+
+#Time Series 1
+
+timeseries_plot_1 <- data_join %>%
+  ggplot() +
+  aes(year, Life_Exp, group = region.x, color = region.x) +
+  geom_line() +
+  labs(title = "Life Expectancy Through The Years") +
+  theme_classic()
+
+timeseries_plot_1
+    
+```
+The correlation between GDP, life expectancy, and TB vaccine coverage underscores the intricate interplay of socioeconomic factors and healthcare outcomes. Higher GDP often correlates with improved access to healthcare, reflected in longer life expectancy and higher vaccination rates. This symbiotic relationship highlights the importance of equitable economic growth and robust healthcare systems in fostering population health. As nations strive for development, prioritizing healthcare infrastructure and vaccination programs remains paramount. Ultimately, sustained efforts in both economic advancement and healthcare provision are essential for enhancing societal well-being and achieving significant progress in global health outcomes
